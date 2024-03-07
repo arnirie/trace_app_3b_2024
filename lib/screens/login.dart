@@ -1,8 +1,11 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:email_validator/email_validator.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
+import 'package:trace_app_3b/screens/client.dart';
+import 'package:trace_app_3b/screens/establishment.dart';
 import 'package:trace_app_3b/screens/home.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 
@@ -33,10 +36,25 @@ class _LoginScreenState extends State<LoginScreen> {
       await FirebaseAuth.instance
           .signInWithEmailAndPassword(
               email: email.text, password: password.text)
-          .then((user) {
+          .then((userCredential) async {
         EasyLoading.dismiss();
+        //check if the user is client or establishment
+        String userId = userCredential.user!.uid;
+        final document = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userId)
+            .get();
+        var data = document.data()!;
+        Widget landing;
+        if (data['type'] == 'client') {
+          landing = ClientScreen(
+            userId: userId,
+          );
+        } else {
+          landing = EstablishmentScreen();
+        }
         Navigator.of(context).push(
-          CupertinoPageRoute(builder: (_) => HomeScreen()),
+          CupertinoPageRoute(builder: (_) => landing),
         );
       }).catchError((error) {
         print('ERROR $error');
